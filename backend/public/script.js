@@ -1,13 +1,14 @@
 const socket=io('/')
 const videoGrid = document.getElementById('video-grid');
-const myPeer = new Peer(undefined,{
+const myPeer = new Peer({
     host:'/',
     port:'3001'
 })
 let togglemic = 1,togglevideo=1;
-let text = "";
+let text = {};
 const myVideo = document.createElement('video');
 myVideo.muted=true;
+uid=""
 const peers={}
 navigator.mediaDevices.getUserMedia({
     video:true,
@@ -19,6 +20,7 @@ navigator.mediaDevices.getUserMedia({
         console.log("IM In");
         call.answer(stream);
         const video =document.createElement('video')
+        video.setAttribute('id',call.peer);
         call.on('stream',userVideoStream=>{
             addVideoStream(video,userVideoStream,"in");
         })
@@ -54,7 +56,8 @@ navigator.mediaDevices.getUserMedia({
                             // outputDiv.innerHTML += `<p>${transcript}</p>`;
                             console.log("transcript->",transcript);
                             //speech from other user
-                            text+= "\n"+transcript;
+
+                            text[Date.now()]=transcript;
                         } else {
                             interimTranscript += transcript;
                         }
@@ -100,11 +103,13 @@ navigator.mediaDevices.getUserMedia({
     })
     socket.on('user-disconnected',(userId)=>{
         console.log("USER DISCONNECTED "+userId);
+        document.getElementById(userId).remove();
         if (peers[userId]){
             console.log("CLOSED");
             peers[userId].close()
         }
-        
+        delete peers[userId];
+        console.log("SIZE"+Object.keys(peers).length);
     })
 
 }).catch((error)=>{
@@ -112,15 +117,19 @@ navigator.mediaDevices.getUserMedia({
 })
 
 myPeer.on('open',id=>{
-    console.log("OPEN");
+    console.log("OPEN"+id);
+    myVideo.setAttribute('id',id);
     socket.emit('join-room',ROOM_ID,id);
 })
+
+// myPeer.on('close',)
 
 function connectToNewUser(userId,stream)
 {
     console.log("NEW USER");
     const call =myPeer.call(userId,stream);
     const video=document.createElement('video');
+    video.setAttribute('id',userId);
     call.on('stream',(userVideoStream)=>{
         console.log("ADD NEW VIDEO");
         addVideoStream(video, userVideoStream ,"new");
@@ -159,7 +168,7 @@ function connectToNewUser(userId,stream)
                             // outputDiv.innerHTML += `<p>${transcript}</p>`;
                             console.log("transcript ",transcript);
                             //speech from current user
-                            text+= "\n"+transcript;
+                            text[Date.now()]=transcript;
                         } else {
                             interimTranscript += transcript;
                         }
@@ -196,6 +205,7 @@ function connectToNewUser(userId,stream)
         }
     }
     call.on('close',()=>{
+        
         video.remove();
     })
 
