@@ -1,13 +1,15 @@
 
 const socket=io('/')
 const videoGrid = document.getElementById('video-grid');
-const myPeer = new Peer(undefined,{
+const myPeer = new Peer({
     host:'/',
     port:'3001'
 })
 let togglemic = 1,togglevideo=1;
+let text = {};
 const myVideo = document.createElement('video');
 myVideo.muted=true;
+uid=""
 const peers={}
 
 navigator.mediaDevices.getUserMedia({
@@ -20,23 +22,63 @@ navigator.mediaDevices.getUserMedia({
     myPeer.on('call',(call)=>{
         console.log("IM In");
         call.answer(stream);
-        console.log(stream.id);
-        const video =document.createElement('video');
+        const video =document.createElement('video')
+        video.setAttribute('id',call.peer);
         call.on('stream',userVideoStream=>{
             addVideoStream(video,userVideoStream,"in");
         })
         document.getElementById("mictoggle").onclick = ()=>{
+            let recognition;
+            let output= "";
             if(togglemic){
                 stream.getAudioTracks()[0].enabled = false;
                 togglemic =0;
                 document.getElementById("mictoggle").innerText="MIC(🔇)";
                 console.log("mic off");
+                if (recognition) {
+                    recognition?.stop();
+                    console.log('Recording stopped...');
+                }
             }
             else {
                 stream.getAudioTracks()[0].enabled = true;
-                togglemic =1;
                 document.getElementById("mictoggle").innerText="MIC(🎙️)";
                 console.log("mic on");
+                recognition = new webkitSpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = false;
+                recognition.onstart = () => {
+                    console.log('Recording started...');
+                };
+
+                recognition.onresult = (event) => {
+                    let interimTranscript = '';
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const transcript = event.results[i][0].transcript;
+                        if (event.results[i].isFinal) {
+                            // outputDiv.innerHTML += `<p>${transcript}</p>`;
+                            console.log("transcript->",transcript);
+                            //speech from other user
+
+                            text[Date.now()]=transcript;
+                        } else {
+                            interimTranscript += transcript;
+                        }
+                    }
+                    if(interimTranscript!="") output= interimTranscript;
+                    // console.log('Interim transcript:', interimTranscript);
+                };
+
+                recognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                };
+
+                recognition.onend = () => {
+                    console.log('Recording ended...');
+                };
+
+                recognition.start();
+                togglemic =1;
         
             }
         }
@@ -69,7 +111,8 @@ navigator.mediaDevices.getUserMedia({
             console.log("CLOSED");
             peers[userId].close()
         }
-        
+        delete peers[userId];
+        console.log("SIZE"+Object.keys(peers).length);
     })
 
 }).catch((error)=>{
@@ -77,10 +120,13 @@ navigator.mediaDevices.getUserMedia({
 })
 
 myPeer.on('open',id=>{
-    console.log("OPEN");
+    console.log("OPEN"+id);
+    myVideo.setAttribute('id',id);
     socket.emit('join-room',ROOM_ID,id);
     myVideo.setAttribute('id',id);
 })
+
+// myPeer.on('close',)
 
 function connectToNewUser(userId,stream)
 {
@@ -94,18 +140,57 @@ function connectToNewUser(userId,stream)
     })
     console.log("MIC ",stream.getAudioTracks()[0]);
     document.getElementById("mictoggle").onclick = ()=>{
+        let recognition;
+        let output= "";
         if(togglemic){
             stream.getAudioTracks()[0].enabled = false;
             togglemic =0;
             document.getElementById("mictoggle").innerText="MIC(🔇)";
             console.log("mic off");
+           // if (recognition) {
+                recognition?.stop();
+                console.log('Recording stopped...');
+            //}
+           // else  console.log('Recording not stopped...',recognition); 
         }
         else {
             stream.getAudioTracks()[0].enabled = true;
-            togglemic =1;
             document.getElementById("mictoggle").innerText="MIC(🎙️)";
             console.log("mic on");
-    
+            recognition = new webkitSpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = false;
+                recognition.onstart = () => {
+                    console.log('Recording started...');
+                };
+
+                recognition.onresult = (event) => {
+                    let interimTranscript = '';
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const transcript = event.results[i][0].transcript;
+                        if (event.results[i].isFinal) {
+                            // outputDiv.innerHTML += `<p>${transcript}</p>`;
+                            console.log("transcript ",transcript);
+                            //speech from current user
+                            text[Date.now()]=transcript;
+                        } else {
+                            interimTranscript += transcript;
+                        }
+                    }
+                    if(interimTranscript!="") output= interimTranscript;
+                    // console.log('Interim transcript:', interimTranscript);
+                };
+
+                recognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                };
+
+                recognition.onend = () => {
+                    console.log('Recording ended...');
+                };
+
+                recognition.start();
+                togglemic =1;
         }
     }
     document.getElementById("videotoggle").onclick = ()=>{
@@ -124,7 +209,6 @@ function connectToNewUser(userId,stream)
         }
     }
     call.on('close',()=>{
-        // videoGrid.remove(video);
         video.remove();
     })
 
@@ -138,4 +222,11 @@ function addVideoStream(video,stream,stat){
         video.play();
     })
     videoGrid.append(video);
+}
+
+document.getElementById("recording").onclick = ()=>{
+    console.log("the transcript for this user is\n",text);
+
+    //send this text to summary api
+
 }
