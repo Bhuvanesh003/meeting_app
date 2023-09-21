@@ -11,7 +11,11 @@ const myVideo = document.createElement('video');
 myVideo.muted=true;
 uid=""
 const peers={}
-
+myPeer.on('connection', (dataConnection) => {
+    dataConnection.on('data', (data) => {
+        console.log(`Received message: ${data}`);
+    });
+});
 navigator.mediaDevices.getUserMedia({
     video:true,
     audio:true
@@ -58,6 +62,7 @@ navigator.mediaDevices.getUserMedia({
                         if (event.results[i].isFinal) {
                             // outputDiv.innerHTML += `<p>${transcript}</p>`;
                             console.log("transcript->",transcript);
+                            socket.emit("collect-msg",transcript);
                             //speech from other user
 
                             text[Date.now()]=transcript;
@@ -106,6 +111,9 @@ navigator.mediaDevices.getUserMedia({
     })
     socket.on('user-disconnected',(userId)=>{
         console.log("USER DISCONNECTED "+userId);
+        const currentUrl = window.location.href; console.log(currentUrl);
+        // socket.broadcast.to(idid).emit('message', 'blah');
+        
         document.getElementById(userId).remove();
         if (peers[userId]){
             console.log("CLOSED");
@@ -171,6 +179,7 @@ function connectToNewUser(userId,stream)
                         if (event.results[i].isFinal) {
                             // outputDiv.innerHTML += `<p>${transcript}</p>`;
                             console.log("transcript ",transcript);
+                            socket.emit("collect-msg",transcript);
                             //speech from current user
                             text[Date.now()]=transcript;
                         } else {
@@ -208,9 +217,32 @@ function connectToNewUser(userId,stream)
     
         }
     }
-    call.on('close',()=>{
-        video.remove();
-    })
+    // call.on('close',()=>{
+    //     // var peerr = new Peer();
+    //     // var con = peerr.connect(userId);
+    //     console.log("peer out");
+    //     // con.send('HELLO WORLD');
+    //     video.remove();
+    // })
+    call.on('close', () => {
+        // Peer disconnected
+        // console.log(`Peer ${callerId} disconnected`);
+        // delete connectedPeers[callerId];
+        let callerId = call.peer;
+        // Check if there are no connected peers left
+        if (Object.keys(peers).length === 0) {
+            console.log(`The room is empty`);
+        } else {
+            // Notify remaining users that someone left
+            const message = `${callerId} left the call.`;
+            Object.keys(peers).forEach(peerId => {
+                if (peerId !== callerId) {
+                    const dataConnection = myPeer.connect(peerId);
+                    dataConnection.send(message);
+                }
+            });
+        }
+    });
 
     peers[userId] = call;
 }
@@ -226,7 +258,13 @@ function addVideoStream(video,stream,stat){
 
 document.getElementById("recording").onclick = ()=>{
     console.log("the transcript for this user is\n",text);
-
+    socket.emit('generate',text);
+    window.location = "http://www.google.com";
     //send this text to summary api
 
 }
+// window.onbeforeunload = function () {
+//     console.log("vanakkkam.....");
+//     return "Do you really want to close?";
+
+// };
