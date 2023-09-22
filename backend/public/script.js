@@ -7,6 +7,7 @@ const myPeer = new Peer({
 })
 let togglemic = 1,togglevideo=1;
 let text = {};
+let room="";
 const myVideo = document.createElement('video');
 myVideo.muted=true;
 uid=""
@@ -115,6 +116,8 @@ navigator.mediaDevices.getUserMedia({
         console.log("SIZE"+Object.keys(peers).length);
     })
 
+
+
 }).catch((error)=>{
     console.log(error);
 })
@@ -122,11 +125,10 @@ navigator.mediaDevices.getUserMedia({
 myPeer.on('open',id=>{
     console.log("OPEN"+id);
     myVideo.setAttribute('id',id);
+    room = ROOM_ID
     socket.emit('join-room',ROOM_ID,id);
     myVideo.setAttribute('id',id);
 })
-
-// myPeer.on('close',)
 
 function connectToNewUser(userId,stream)
 {
@@ -209,6 +211,7 @@ function connectToNewUser(userId,stream)
         }
     }
     call.on('close',()=>{
+        
         video.remove();
     })
 

@@ -24,7 +24,7 @@ def call():
     form=request.form.to_dict()
     txt=form['txt']
     print(len(txt))
-    word_max = (int)(len(txt) * 0.15)
+    word_max = (int)(len(txt) * 0.65)
     print("MAX", word_max)
     word_min = (int)(len(txt) * 0.10)
     print("MIN", word_min)
