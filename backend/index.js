@@ -1,4 +1,5 @@
 const express = require('express');
+const axios = require('axios');
 // const { Socket } = require('socket.io');
 const app = express();
 const server = require('http').createServer(app);
@@ -6,7 +7,7 @@ const io = require('socket.io')(server);
 const {v4:uuidV4} = require('uuid');
 const cors = require('cors');
 
-
+let dataa;
 app.set('view engine','ejs');
 app.use(express.static('public'));
 app.get('/',(req,res,next)=>{
@@ -17,6 +18,21 @@ app.get("/:room",(req,res,next)=>{
 });
 app.use(cors());
 io.on('connection',(socket)=>{
+    socket.on("collect-msg",(args)=>{
+        dataa+="\n"+args;
+        console.log("msg is",args);
+    })
+    socket.on("generate",(email)=>{
+        //make api call here
+        axios.post("http://localhost:5000/summarize", {
+      to: email,
+      txt: dataa
+    })
+    .then((response) => {
+      console.log(response);
+    });
+        console.log("tanscript is",dataa);
+    })
     socket.on('join-room',(roomId,userId)=>{
         socket.join(roomId)
         console.log(roomId,"-",userId)
