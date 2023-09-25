@@ -21,6 +21,7 @@ def chk():
 @app.route('/summarize',methods=['GET','POST'])
 def call():
     print("HIII Mail")
+    print(request.form.to_dict())
     form=request.form.to_dict()
     txt=form['txt']
     print(len(txt))
@@ -44,7 +45,7 @@ def call():
     # if (len(toaddr) < 6):
     s.sendmail('2012070@nec.edu.in', toaddr, text)
     s.quit()
-    return sum,200
+    return "Email Sent Successfully",200
 def bart_summarize(text, num_beams, length_penalty, max_length, min_length, no_repeat_ngram_size):
     text = text.replace('\n', '')
     print("1")

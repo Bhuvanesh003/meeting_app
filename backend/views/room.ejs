@@ -4,17 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BHK MEET </title>
+    <link rel="stylesheet" href="style.css">
     <script>
         const ROOM_ID="<%= roomId %>"
     </script>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js" defer></script>
     <script src="/socket.io/socket.io.js" defer></script>
     <script src="script.js" defer></script>
+
     
     <style>
         #video-grid{
             display: grid;
-            grid-template-columns: repeat(auto-fill,300px);
+            grid-template-rows: repeat(auto-fill,300px);
             grid-auto-rows: 300px;
         }
 
@@ -23,19 +25,33 @@
             height: 100%;
             object-fit: cover;
         }
+        
+
+        /* Resetting default margin and padding */
+
     </style>
 </head>
 <body>
-    <input id="username" type="text" placeholder="enter username">
+    <h1>BHK MEET</h1>
+    <!-- <input id="username" type="text" placeholder="enter username"> -->
+    <div id="video-grid-container">
     <div id="video-grid">
 
+    </div>
     </div>
     <div>
         <button id="mictoggle">MIC(🔇)</button>
         <button id="videotoggle">VIDEO👇🏻(off)</button>
 
     </div>
-    <p>I agree to the terms and conditions of recording</p>
+    <!-- <p>I agree to the terms and conditions of recording</p> -->
     <button id="recording">genrate report</button>
+    <div id="emailForm" style="display:none;">
+        <form id="emailForm">
+            <label for="email">Email:</label>
+            <input type="email" id="email" required>
+            <button type="submit">Submit</button>
+        </form>
+    </div>
 </body>
 </html>

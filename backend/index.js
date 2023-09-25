@@ -1,13 +1,14 @@
 const express = require('express');
 const axios = require('axios');
 // const { Socket } = require('socket.io');
+const FormData = require('form-data');
 const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
 const {v4:uuidV4} = require('uuid');
 const cors = require('cors');
 
-let dataa;
+let dataa="";
 app.set('view engine','ejs');
 app.use(express.static('public'));
 app.get('/',(req,res,next)=>{
@@ -24,15 +25,20 @@ io.on('connection',(socket)=>{
     })
     socket.on("generate",(email)=>{
         //make api call here
-        axios.post("http://localhost:5000/summarize", {
-      to: email,
-      txt: dataa
-    })
+        console.log("HII");
+        const formData = new FormData();
+        formData.append('to', email);
+        formData.append('txt', dataa);
+        if(dataa.length==0)
+        {
+            console.log("NO CONTENT TO SUMMARIZE");
+        }else{
+        axios.post("http://localhost:5000/summarize", formData)
     .then((response) => {
-      console.log(response);
-    });
+      console.log(response.data);
+    });}
         console.log("tanscript is",dataa);
-    })
+    });
     socket.on('join-room',(roomId,userId)=>{
         socket.join(roomId)
         console.log(roomId,"-",userId)

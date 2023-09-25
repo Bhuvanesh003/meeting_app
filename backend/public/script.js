@@ -254,8 +254,24 @@ function addVideoStream(video,stream,stat){
 }
 
 document.getElementById("recording").onclick = ()=>{
+
     console.log("the transcript for this user is\n",text);
-    socket.emit('generate', #EMAIL#);
-    window.location = "http://www.google.com";
+    // socket.emit('generate', #EMAIL#);
+    document.getElementById('emailForm').style.display = 'block';
+    // window.location = "http://www.google.com";
 
 }
+document.getElementById('emailForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    var email = document.getElementById('email').value;
+
+    // Store the email in JavaScript (you can use localStorage, a database, or send it to a server)
+    // For this example, we'll use localStorage
+    localStorage.setItem('email', email);
+
+    alert('Soon Your Summary will be mailed');
+    socket.emit('generate', email);
+    // Optional: Reset the form and hide it
+    // document.getElementById('emailForm').reset();
+    document.getElementById('emailForm').style.display = 'none';
+});
